@@ -20,90 +20,23 @@ func main() {
 
 	input := splitS(string(data))
 
-	for i, val := range input {
+	for i := 0; i < len(input); i++ {
 
 		if i == 0 {
-			var numberOfConvert int
-			switch val {
-			case "(hex)":
-				input[i] = ""
-			case "(bin)":
-				input[i] = ""
-			case "(cap)":
-				input[i] = ""
-			case "(cap,":
-				if i != len(input)-1 && input[i+1][len(input[i+1])-1:] == ")" {
-					numberOfConvert = TrimAtoi(input[i+1])
-					if numberOfConvert == -1 {
-						continue
-					}
-					input[i] = ""
-					input[i+1] = ""
-
-					for j := i - 1; numberOfConvert > 0; j-- {
-						if j < 0 {
-							break
-						}
-						if input[j] == "" {
-							continue
-						}
-						input[j] = Capitalize(input[j])
-						numberOfConvert--
-					}
-				}
-			case "(up)":
-				input[i] = ""
-				input[i-1] = strings.ToUpper(input[i-1])
-			case "(up,":
-				if i != len(input)-1 && input[i+1][len(input[i+1])-1:] == ")" {
-					numberOfConvert = TrimAtoi(input[i+1])
-					if numberOfConvert == -1 {
-						continue
-					}
-					input[i] = ""
-					input[i+1] = ""
-					//cap p
-					for j := i - 1; numberOfConvert > 0; j-- {
-						if j < 0 {
-							break
-						}
-						if input[j] == "" {
-							continue
-						}
-						input[j] = strings.ToUpper(input[j])
-						numberOfConvert--
-					}
-
-				}
-
-			case "(low)":
-				input[i] = ""
-				input[i-1] = strings.ToLower(input[i-1])
-			case "(low,":
-				if i != len(input)-1 && input[i+1][len(input[i+1])-1:] == ")" {
-					numberOfConvert = TrimAtoi(input[i+1])
-					if numberOfConvert == -1 {
-						continue
-					}
-					if numberOfConvert != 0 {
-						input[i] = ""
-						input[i+1] = ""
-					}
-					for j := i - 1; numberOfConvert > 0; j-- {
-						if j < 0 {
-							break
-						}
-						if input[j] == "" {
-							continue
-						}
-						input[j] = strings.ToLower(input[j])
-						numberOfConvert--
-					}
-				}
+			match := false
+			match1, _ := regexp.MatchString(`^\((hex|bin|cap|up|low)[,\)]$`, input[i])
+			if i+1 < len(input) {
+				match2, _ := regexp.MatchString(`^\d+\)$`, input[i+1])
+				match = match1 && match2
 			}
+			if match {
+				input[i] = ""
+				input[i+1] = ""
+			}
+
 		} else {
 			var numberOfConvert int
-			switch val {
+			switch input[i] {
 			case "(hex)":
 				input[i] = ""
 				input[i-1] = hexConvert(input[i-1])
@@ -114,7 +47,7 @@ func main() {
 				input[i] = ""
 				input[i-1] = Capitalize(input[i-1])
 			case "(cap,":
-				if i != len(input)-1 && input[i+1][len(input[i+1])-1:] == ")" {
+				if i < len(input)-1 && input[i+1][len(input[i+1])-1:] == ")" {
 					numberOfConvert = TrimAtoi(input[i+1])
 					if numberOfConvert == -1 {
 						continue
@@ -137,7 +70,7 @@ func main() {
 				input[i] = ""
 				input[i-1] = strings.ToUpper(input[i-1])
 			case "(up,":
-				if i != len(input)-1 && input[i+1][len(input[i+1])-1:] == ")" {
+				if i < len(input)-1 && input[i+1][len(input[i+1])-1:] == ")" {
 					numberOfConvert = TrimAtoi(input[i+1])
 					if numberOfConvert == -1 {
 						continue
@@ -162,7 +95,7 @@ func main() {
 				input[i] = ""
 				input[i-1] = strings.ToLower(input[i-1])
 			case "(low,":
-				if i != len(input)-1 && input[i+1][len(input[i+1])-1:] == ")" {
+				if i < len(input)-1 && input[i+1][len(input[i+1])-1:] == ")" {
 					numberOfConvert = TrimAtoi(input[i+1])
 					if numberOfConvert == -1 {
 						continue
