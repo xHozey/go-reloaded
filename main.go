@@ -16,150 +16,130 @@ func main() {
 		return
 	}
 
-	text := string(data)
-	fmt.Print(text)
-	text = " " + text + " "
-	text = strings.ReplaceAll(text, "''", " ' ' ")
-	text = strings.ReplaceAll(text, "' ", " ' ")
-	text = strings.ReplaceAll(text, " '", " ' ")
-	text = strings.ReplaceAll(text, "'\n", " '  \n ")
-	text = strings.ReplaceAll(text, "\n'", "   '   \n ")
-	text = strings.ReplaceAll(text, "''", " ' ")
-	text = strings.ReplaceAll(text, "' ", " ' ")
-	text = strings.ReplaceAll(text, " '", " ' ")
-	text = strings.ReplaceAll(text, "'\n", " ' \n ")
-	text = strings.ReplaceAll(text, "\n'", " ' \n ")
-	text = strings.ReplaceAll(text, "\n", "\n ")
-	text = strings.TrimSpace(text)
-	text = ponctuationFix(text)
-	input := strings.Split(text, " ")
-
-	for i := 0; i < len(input); i++ {
-		if i == 0 {
-			match := false
-			match1, _ := regexp.MatchString(`^\((hex|bin|cap|up|low)[,\)]$`, input[i])
-			if i+1 < len(input) {
-				match2, _ := regexp.MatchString(`^\d+\)$`, input[i+1])
-				match = match1 && match2
-			}
-			if match {
-				input[i] = ""
-				input[i+1] = ""
-			} else if (input[i] == "(up)" || input[i] == "(low)" || input[i] == "(cap)") && match1 {
-				input[i] = ""
-			}
-
-		} else {
-			var numberOfConvert int
-			switch input[i] {
-			case "(hex)":
-				input[i] = ""
-				input[i-1] = hexConvert(input[i-1])
-			case "(bin)":
-				input[i] = ""
-				input[i-1] = binConvert(input[i-1])
-			case "(cap)":
-				input[i] = ""
-				input[i-1] = Capitalize(input[i-1])
-			case "(cap,":
-				if i < len(input)-1 && input[i+1][len(input[i+1])-1:] == ")" {
-					numberOfConvert = TrimAtoi(input[i+1])
-					if numberOfConvert == -1 {
-						continue
-					}
-					input[i] = ""
-					input[i+1] = ""
-					for j := i - 1; numberOfConvert > 0; j-- {
-						if j < 0 {
-							break
-						}
-						if input[j] == "" {
-							continue
-						}
-						input[j] = Capitalize(input[j])
-						numberOfConvert--
-					}
-				}
-			case "(up)":
-				input[i] = ""
-				input[i-1] = strings.ToUpper(input[i-1])
-			case "(up,":
-				if i < len(input)-1 && input[i+1][len(input[i+1])-1:] == ")" {
-					numberOfConvert = TrimAtoi(input[i+1])
-					if numberOfConvert == -1 {
-						continue
-					}
-					input[i] = ""
-					input[i+1] = ""
-					for j := i - 1; numberOfConvert > 0; j-- {
-						if j < 0 {
-							break
-						}
-						if input[j] == "" {
-							continue
-						}
-						input[j] = strings.ToUpper(input[j])
-						numberOfConvert--
-					}
-
-				}
-
-			case "(low)":
-				input[i] = ""
-				input[i-1] = strings.ToLower(input[i-1])
-			case "(low,":
-				if i < len(input)-1 && input[i+1][len(input[i+1])-1:] == ")" {
-					numberOfConvert = TrimAtoi(input[i+1])
-					if numberOfConvert == -1 {
-						continue
-					}
-					input[i] = ""
-					input[i+1] = ""
-					for j := i - 1; numberOfConvert > 0; j-- {
-						if j < 0 {
-							break
-						}
-						if input[j] == "" {
-							continue
-						}
-						input[j] = strings.ToLower(input[j])
-						numberOfConvert--
-					}
-				}
-			}
-		}
+	inputext := string(data)
+	lines := strings.Split(inputext, "\n")
+	for i, line := range lines {
+		line := flags(line)
+		line = quotesFixer(line)
+		line = vowl(line)
+		line = ponctuationFix(line)
+		line = standardizeSpaces(line)
+		lines[i] = line
 	}
-
-	input = quotesFixer(input)
-	input = vowl(input)
-	myString := Join(input, " ")
-	myString = ponctuationFix(myString)
-	myString = standardizeSpaces(myString)
+	output := strings.Join(lines, "\n")
 
 	file, err := os.Create("result.txt")
 	if err != nil {
 		fmt.Printf("error")
 		return
 	}
-	file.WriteString(myString)
+	file.WriteString(output)
 }
 
-func Join(strs []string, sep string) string {
-	var h string
-	for _, arg := range strs {
-		if h == "" {
-			h = arg
-		} else if h != "\n" {
-			h = h + sep + arg
-		} else if h == "\n" {
-			h = h + arg
+func flags(str string) string {
+	s := strings.Fields(str)
+
+	for i := 0; i < len(s); i++ {
+		if i == 0 {
+			match := false
+			match1, _ := regexp.MatchString(`^\((hex|bin|cap|up|low)[,\)]$`, s[i])
+			if i+1 < len(s) {
+				match2, _ := regexp.MatchString(`^\d+\)$`, s[i+1])
+				match = match1 && match2
+			}
+			if match {
+				s[i] = ""
+				s[i+1] = ""
+			} else if (s[i] == "(up)" || s[i] == "(low)" || s[i] == "(cap)") && match1 {
+				s[i] = ""
+			}
+
+		} else {
+			var numberOfConvert int
+			switch s[i] {
+			case "(hex)":
+				s[i] = ""
+				s[i-1] = hexConvert(s[i-1])
+			case "(bin)":
+				s[i] = ""
+				s[i-1] = binConvert(s[i-1])
+			case "(cap)":
+				s[i] = ""
+				s[i-1] = Capitalize(s[i-1])
+			case "(cap,":
+				if i < len(s)-1 && s[i+1][len(s[i+1])-1:] == ")" {
+					numberOfConvert = TrimAtoi(s[i+1])
+					if numberOfConvert == -1 {
+						continue
+					}
+					s[i] = ""
+					s[i+1] = ""
+					for j := i - 1; numberOfConvert > 0; j-- {
+						if j < 0 {
+							break
+						}
+						if s[j] == "" {
+							continue
+						}
+						s[j] = Capitalize(s[j])
+						numberOfConvert--
+					}
+				}
+			case "(up)":
+				s[i] = ""
+				s[i-1] = strings.ToUpper(s[i-1])
+			case "(up,":
+				if i < len(s)-1 && s[i+1][len(s[i+1])-1:] == ")" {
+					numberOfConvert = TrimAtoi(s[i+1])
+					if numberOfConvert == -1 {
+						continue
+					}
+					s[i] = ""
+					s[i+1] = ""
+					for j := i - 1; numberOfConvert > 0; j-- {
+						if j < 0 {
+							break
+						}
+						if s[j] == "" {
+							continue
+						}
+						s[j] = strings.ToUpper(s[j])
+						numberOfConvert--
+					}
+
+				}
+
+			case "(low)":
+				s[i] = ""
+				s[i-1] = strings.ToLower(s[i-1])
+			case "(low,":
+				if i < len(s)-1 && s[i+1][len(s[i+1])-1:] == ")" {
+					numberOfConvert = TrimAtoi(s[i+1])
+					if numberOfConvert == -1 {
+						continue
+					}
+					s[i] = ""
+					s[i+1] = ""
+					for j := i - 1; numberOfConvert > 0; j-- {
+						if j < 0 {
+							break
+						}
+						if s[j] == "" {
+							continue
+						}
+						s[j] = strings.ToLower(s[j])
+						numberOfConvert--
+					}
+				}
+			}
 		}
 	}
-	return h
+	return strings.Join(s, " ")
+
 }
 
 func standardizeSpaces(s string) string {
-	return strings.Join(strings.Split(s, " "), " ")
+	return strings.Join(strings.Fields(s), " ")
 }
 
 func CheckFirstCharIsvowel(str string) bool {
@@ -174,7 +154,9 @@ func CheckFirstCharIsvowel(str string) bool {
 	return false
 }
 
-func vowl(s []string) []string {
+func vowl(str string) string {
+	s := strings.Fields(str)
+
 	for i := range s {
 		if s[i] == "a" || s[i] == "A" {
 			if i+1 < len(s) {
@@ -206,12 +188,21 @@ func vowl(s []string) []string {
 		}
 	}
 
-	return s
+	return strings.Join(s, " ")
 }
 
-func quotesFixer(s []string) []string {
-	offOn := false
+func quotesFixer(text string) string {
+	text = " " + text + " "
+	text = strings.ReplaceAll(text, "''", " ' ' ")
+	text = strings.ReplaceAll(text, "' ", " ' ")
+	text = strings.ReplaceAll(text, " '", " ' ")
+	text = strings.ReplaceAll(text, "''", " ' ")
+	text = strings.ReplaceAll(text, "' ", " ' ")
+	text = strings.ReplaceAll(text, " '", " ' ")
+	text = strings.TrimSpace(text)
 
+	s := strings.Fields(text)
+	offOn := false
 	for i := 0; i < len(s); i++ {
 
 		if s[i] == "'" && !offOn {
@@ -225,7 +216,7 @@ func quotesFixer(s []string) []string {
 			s[i] = ""
 		}
 	}
-	return s
+	return strings.Join(s, " ")
 }
 
 func ponctuationFix(s string) string {
