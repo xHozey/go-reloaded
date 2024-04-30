@@ -9,19 +9,32 @@ import (
 )
 
 func main() {
-
 	sample := os.Args[1]
 	data, err := os.ReadFile(sample)
-
 	if err != nil {
 		fmt.Printf("Error")
 		return
 	}
 
-	input := splitS(string(data))
+	text := string(data)
+	fmt.Print(text)
+	text = " " + text + " "
+	text = strings.ReplaceAll(text, "''", " ' ' ")
+	text = strings.ReplaceAll(text, "' ", " ' ")
+	text = strings.ReplaceAll(text, " '", " ' ")
+	text = strings.ReplaceAll(text, "'\n", " '  \n ")
+	text = strings.ReplaceAll(text, "\n'", "   '   \n ")
+	text = strings.ReplaceAll(text, "''", " ' ")
+	text = strings.ReplaceAll(text, "' ", " ' ")
+	text = strings.ReplaceAll(text, " '", " ' ")
+	text = strings.ReplaceAll(text, "'\n", " ' \n ")
+	text = strings.ReplaceAll(text, "\n'", " ' \n ")
+	text = strings.ReplaceAll(text, "\n", "\n ")
+	text = strings.TrimSpace(text)
+	text = ponctuationFix(text)
+	input := strings.Split(text, " ")
 
 	for i := 0; i < len(input); i++ {
-
 		if i == 0 {
 			match := false
 			match1, _ := regexp.MatchString(`^\((hex|bin|cap|up|low)[,\)]$`, input[i])
@@ -32,6 +45,8 @@ func main() {
 			if match {
 				input[i] = ""
 				input[i+1] = ""
+			} else if (input[i] == "(up)" || input[i] == "(low)" || input[i] == "(cap)") && match1 {
+				input[i] = ""
 			}
 
 		} else {
@@ -54,7 +69,6 @@ func main() {
 					}
 					input[i] = ""
 					input[i+1] = ""
-
 					for j := i - 1; numberOfConvert > 0; j-- {
 						if j < 0 {
 							break
@@ -77,7 +91,6 @@ func main() {
 					}
 					input[i] = ""
 					input[i+1] = ""
-					//cap p
 					for j := i - 1; numberOfConvert > 0; j-- {
 						if j < 0 {
 							break
@@ -100,10 +113,8 @@ func main() {
 					if numberOfConvert == -1 {
 						continue
 					}
-					if numberOfConvert != 0 {
-						input[i] = ""
-						input[i+1] = ""
-					}
+					input[i] = ""
+					input[i+1] = ""
 					for j := i - 1; numberOfConvert > 0; j-- {
 						if j < 0 {
 							break
@@ -117,12 +128,11 @@ func main() {
 				}
 			}
 		}
-
 	}
 
 	input = quotesFixer(input)
 	input = vowl(input)
-	myString := strings.Join(input, " ")
+	myString := Join(input, " ")
 	myString = ponctuationFix(myString)
 	myString = standardizeSpaces(myString)
 
@@ -134,8 +144,22 @@ func main() {
 	file.WriteString(myString)
 }
 
+func Join(strs []string, sep string) string {
+	var h string
+	for _, arg := range strs {
+		if h == "" {
+			h = arg
+		} else if h != "\n" {
+			h = h + sep + arg
+		} else if h == "\n" {
+			h = h + arg
+		}
+	}
+	return h
+}
+
 func standardizeSpaces(s string) string {
-	return strings.Join(strings.Fields(s), " ")
+	return strings.Join(strings.Split(s, " "), " ")
 }
 
 func CheckFirstCharIsvowel(str string) bool {
@@ -151,9 +175,15 @@ func CheckFirstCharIsvowel(str string) bool {
 }
 
 func vowl(s []string) []string {
-
-	for i, _ := range s {
+	for i := range s {
 		if s[i] == "a" || s[i] == "A" {
+			if i+1 < len(s) {
+				if CheckFirstCharIsvowel(s[i+1]) {
+					s[i] += "n"
+				}
+			}
+		}
+		if s[i] == "'a" || s[i] == "'A" {
 			if i+1 < len(s) {
 				if CheckFirstCharIsvowel(s[i+1]) {
 					s[i] += "n"
@@ -167,6 +197,13 @@ func vowl(s []string) []string {
 				}
 			}
 		}
+		if s[i] == "'an" || s[i] == "'An" {
+			if i+1 < len(s) {
+				if !CheckFirstCharIsvowel(s[i+1]) {
+					s[i] = "'a"
+				}
+			}
+		}
 	}
 
 	return s
@@ -174,22 +211,25 @@ func vowl(s []string) []string {
 
 func quotesFixer(s []string) []string {
 	offOn := false
+
 	for i := 0; i < len(s); i++ {
+
 		if s[i] == "'" && !offOn {
 			offOn = true
 			s[i+1] = "'" + s[i+1]
-			s = remove(s, i)
+			s[i] = ""
+
 		} else if s[i] == "'" && offOn {
 			offOn = false
 			s[i-1] = s[i-1] + "'"
-			s = remove(s, i)
+			s[i] = ""
 		}
 	}
 	return s
 }
 
 func ponctuationFix(s string) string {
-	search := regexp.MustCompile(`\s*([\.,!\?\:;]+) *(\w)`)
+	search := regexp.MustCompile(` *([\.,!\?\:;]+) *(\w)`)
 	s = search.ReplaceAllString(s, "$1 $2")
 
 	search2 := regexp.MustCompile(` *([\.,!\?\:;]+)`)
@@ -212,7 +252,6 @@ func TrimAtoi(s string) int {
 	if N {
 		r *= -1
 	}
-	fmt.Println(r)
 	return r
 }
 
@@ -226,14 +265,6 @@ func binConvert(s string) string {
 	hex, _ := strconv.ParseInt(s, 2, 64)
 	conv := strconv.Itoa(int(hex))
 	return conv
-}
-
-func splitS(s string) []string {
-	return strings.Fields(s)
-}
-
-func remove(slice []string, s int) []string {
-	return append(slice[:s], slice[s+1:]...)
 }
 
 func Capitalize(s string) string {
